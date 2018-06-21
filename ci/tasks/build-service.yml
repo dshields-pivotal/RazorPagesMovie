@@ -4,7 +4,8 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: microsoft/dotnet:2.0.3-sdk
+    repository: microsoft/dotnet
+    tag: 2.1-sdk
 
 inputs:
 - name: service-checkout
