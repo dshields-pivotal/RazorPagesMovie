@@ -1,0 +1,196 @@
+resources:
+- name: service-checkout
+  type: git
+  source:
+    uri: https://github.com/dshields-pivotal/RazorPagesMovie
+    branch: master
+    username: ((git-username))
+    password: ((git-password))
+- name: version
+  type: semver
+  source:
+    bucket: ((s3-bucket-version))
+    initial_version: 1.0.0-rc.0
+    key: ((service-name))-current-version
+    access_key_id: ((s3-access-key-id))
+    secret_access_key: ((s3-secret-access-key))
+    endpoint: ((s3-endpoint))
+    disable_ssl: true
+- name: candidate-release
+  type: s3
+  source:
+    bucket: ((s3-bucket-release-candidates))
+    regexp: ((service-name))-(.*).zip
+    access_key_id: ((s3-access-key-id))
+    secret_access_key: ((s3-secret-access-key))
+    endpoint: ((s3-endpoint))
+    disable_ssl: true
+- name: final-release
+  type: s3
+  source:
+    bucket: ((s3-bucket-releases))
+    regexp: ((service-name))-(.*).zip
+    access_key_id: ((s3-access-key-id))
+    secret_access_key: ((s3-secret-access-key))
+    endpoint: ((s3-endpoint))
+    disable_ssl: true
+- name: pws-dev
+  type: cf
+  source: &CFSOURCE
+    api: ((cf-api))
+    username: ((cf-username))
+    password: ((cf-password))
+    organization: ((cf-organization))
+    space: development
+- name: pws-test
+  type: cf
+  source:
+    <<: *CFSOURCE
+    space: test
+- name: pws-prod
+  type: cf
+  source:
+    <<: *CFSOURCE
+    space: production
+
+jobs:
+- name: unit-test
+  serial: true
+  plan:
+  - get: service-checkout
+    trigger: true
+  - task: run-unit-test
+    file: service-checkout/ci/tasks/unit-test.yml
+    params:
+      SERVICE_NAME: ((service-name))
+
+- name: build-artifact
+  serial_groups: [ version ]
+  plan:
+  - get: service-checkout
+    passed: [unit-test]
+    trigger: true
+  - get: version
+    params: { pre: rc }
+  - task: build-service
+    file: service-checkout/ci/tasks/build-service.yml
+    params:
+      SERVICE_NAME: ((service-name))
+  - put: service-checkout
+    params:
+      repository: service-checkout
+      tag: version/number
+      only_tag: true
+      tag_prefix: ((service-name))/dev/
+  - put: candidate-release
+    params: { file: service-build/((service-name))-*.zip }
+  - put: version
+    params: { file: version/number }
+
+- name: deploy-dev
+  serial: true
+  plan:
+  - get: service-checkout
+    passed: [build-artifact]
+    trigger: true
+  - get: candidate-release
+    passed: [build-artifact]
+    trigger: true
+  - get: version
+    passed: [build-artifact]
+    trigger: true
+  - task: prepare-manifest
+    file: service-checkout/ci/tasks/prepare-manifest.yml
+    params:
+      SERVICE_NAME: ((service-name))
+      SERVICE_HOST: ((host-prefix))-((service-name))-development
+  - put: pws-dev
+    params:
+      manifest: service-deploy/manifest.yml
+      environment_variables:
+        SPRING_PROFILES_ACTIVE: development
+
+- name: integration-test
+  serial: true
+  plan:
+  - get: service-checkout
+    passed: [deploy-dev]
+    trigger: false
+  - task: run-integration-test
+    file: service-checkout/ci/tasks/integration-test.yml
+    params:
+      SERVICE_NAME: ((service-name))
+      SERVICE_URI: ((host-prefix))-((service-name))-development.cfapps.io
+
+- name: deploy-test
+  serial: true
+  plan:
+  - get: service-checkout
+    passed: [integration-test]
+    trigger: true
+  - get: candidate-release
+    passed: [deploy-dev]
+  - get: version
+    passed: [deploy-dev]
+  - task: prepare-manifest
+    file: service-checkout/ci/tasks/prepare-manifest.yml
+    params:
+      SERVICE_NAME: ((service-name))
+      SERVICE_HOST: ((host-prefix))-((service-name))-test
+  - put: pws-test
+    params:
+      manifest: service-deploy/manifest.yml
+      environment_variables:
+        SPRING_PROFILES_ACTIVE: test
+
+- name: deploy-prod
+  serial: true
+  plan:
+  - get: service-checkout
+    passed: [deploy-test]
+  - get: candidate-release
+    passed: [deploy-test]
+  - get: version
+    params: { bump: final }
+  - task: prepare-manifest
+    file: service-checkout/ci/tasks/prepare-manifest.yml
+    params:
+      SERVICE_NAME: ((service-name))
+      SERVICE_HOST: ((host-prefix))-((service-name))
+  - put: service-checkout
+    params:
+      repository: service-checkout
+      tag: version/number
+      only_tag: true
+      tag_prefix: ((service-name))/prod/
+
+  - put: final-release
+    params: { file:  service-deploy/((service-name))-*.zip }
+  - put: version
+    params: { file: version/number }
+  - put: pws-prod
+    params:
+      manifest: service-deploy/manifest.yml
+      environment_variables:
+        SPRING_PROFILES_ACTIVE: production
+
+- name: major
+  serial_groups: [ version ]
+  plan:
+  - put: version
+    params: { bump: major, pre: rc }
+
+- name: minor
+  serial_groups: [ version ]
+  plan:
+  - put: version
+    params: { bump: minor, pre: rc }
+
+- name: patch
+  serial_groups: [ version ]
+  plan:
+  - get: version
+    passed: [ deploy-prod ]
+    trigger: true
+  - put: version
+    params: { bump: patch, pre: rc }
