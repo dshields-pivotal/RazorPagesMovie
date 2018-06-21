@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RazorPagesMovieService\RazorPagesMovie.csproj" />
+    <ProjectReference Include="..\RazorPagesMovie\RazorPagesMovie.csproj" />
   </ItemGroup>
 
 </Project>
