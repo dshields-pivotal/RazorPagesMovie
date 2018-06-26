@@ -11,9 +11,9 @@ if [ -f "version/number" ]; then
   version=`cat version/number`
 fi
 
-inArtifact=`basename candidate-release/*.zip`
+inArtifact=`basename candidate-release/*.tgz`
 
-unzip candidate-release/${inArtifact} -d service-deploy
+tar -xzv -C service-deploy -f candidate-release/${inArtifact}
 
 cp service-checkout/manifest.yml service-deploy
 

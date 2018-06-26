@@ -26,6 +26,6 @@ dotnet restore
 dotnet publish -c Release
 
 cd bin/Release/netcore*
-zip -r ${SERVICE_NAME}-${version}.zip publish
-cp *.zip ${TASK_ROOT}/service-build
+tar -czvf ${SERVICE_NAME}-${version}.tgz publish
+cp *.tgz ${TASK_ROOT}/service-build
 ls ${TASK_ROOT}/service-build

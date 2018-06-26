@@ -20,7 +20,7 @@ resources:
   type: s3
   source:
     bucket: ((s3-bucket-release-candidates))
-    regexp: ((service-name))-(.*).zip
+    regexp: ((service-name))-(.*).tgz
     access_key_id: ((s3-access-key-id))
     secret_access_key: ((s3-secret-access-key))
     endpoint: ((s3-endpoint))
@@ -29,7 +29,7 @@ resources:
   type: s3
   source:
     bucket: ((s3-bucket-releases))
-    regexp: ((service-name))-(.*).zip
+    regexp: ((service-name))-(.*).tgz
     access_key_id: ((s3-access-key-id))
     secret_access_key: ((s3-secret-access-key))
     endpoint: ((s3-endpoint))
@@ -83,7 +83,7 @@ jobs:
       only_tag: true
       tag_prefix: ((service-name))/dev/
   - put: candidate-release
-    params: { file: service-build/((service-name))-*.zip }
+    params: { file: service-build/((service-name))-*.tgz }
   - put: version
     params: { file: version/number }
 
@@ -165,7 +165,7 @@ jobs:
       tag_prefix: ((service-name))/prod/
 
   - put: final-release
-    params: { file:  service-deploy/((service-name))-*.zip }
+    params: { file:  service-deploy/((service-name))-*.tgz }
   - put: version
     params: { file: version/number }
   - put: pws-prod
