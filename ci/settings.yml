@@ -1,0 +1,14 @@
+git-username: <git-username>
+git-password: <git-password>
+s3-access-key-id: <s3-key>
+s3-secret-access-key: <s3-secret>
+s3-endpoint: <s3-url>
+s3-bucket-version: <s3-version-bucket>
+s3-bucket-releases: <s3-release-bucket>
+s3-bucket-release-candidates: <s3-candidate-bucket>
+cf-api: <cf-api-url>
+cf-username: <cf-username>
+cf-password: <cf-password>
+cf-organization: <cf-org>
+cf-space: <cf-space>
+host-prefix: <cf-host-prefix>

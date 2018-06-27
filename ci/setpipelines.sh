@@ -1,2 +1,2 @@
 echo Setting pipeline for csalis-testservice...
-fly -t csalis sp -n -p csalis-testservice -c ci/service.yml -l ci/pwsdev.yml -v service-name=RazorPagesMovie
+fly -t csalis sp -n -p csalis-testservice -c ci/service.yml -l ci/settings.yml -v service-name=RazorPagesMovie

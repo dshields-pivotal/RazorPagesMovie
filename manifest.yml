@@ -4,7 +4,7 @@ instances: 1
 applications:
 - name: csalis-testservice
   host: csalis-testservice
-  path: bin/Release/netcoreapp2.1/publish 
+  path: RazorPagesMovie/bin/Release/netcoreapp2.1/publish 
   buildpack: dotnet_core_buildpack
 #  services:
 #  - config-server
