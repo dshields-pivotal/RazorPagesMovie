@@ -23,7 +23,7 @@ TASK_ROOT=$(pwd)
 
 cd ${TASK_ROOT}/service-checkout/${SERVICE_NAME}
 dotnet restore
-dotnet publish -c Release
+dotnet publish -c Release /property:PublishWithAspNetCoreTargetManifest=false
 
 cd bin/Release/netcore*
 tar -czvf ${SERVICE_NAME}-${version}.tgz publish
